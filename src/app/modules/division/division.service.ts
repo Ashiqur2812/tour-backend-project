@@ -1,97 +1,65 @@
-import { deleteImageFromCLoudinary } from "../../config/cloudinary.config";
-import { QueryBuilder } from "../../utils/QueryBuilder";
-import { divisionSearchableFields } from "./division.constant";
 import { IDivision } from "./division.interface";
 import { Division } from "./division.model";
 
 const createDivision = async (payload: IDivision) => {
 
-    const existingDivision = await Division.findOne({ name: payload.name });
-    if (existingDivision) {
-        throw new Error("A division with this name already exists.");
-    }
-
-
-    // const baseSlug = payload.name.toLowerCase().split(" ").join("-")
-    // let slug = `${baseSlug}-division`
+    // const baseSlug = payload.name.toLowerCase().split(' ').join('-');
+    // let slug = `${baseSlug}-division`;
+    // console.log(slug);
 
     // let counter = 0;
     // while (await Division.exists({ slug })) {
-    //     slug = `${slug}-${counter++}` // dhaka-division-2
+    //     slug = `${slug}-${counter++}`;
     // }
 
     // payload.slug = slug;
 
     const division = await Division.create(payload);
+    return division;
 
-    return division
 };
 
-const getAllDivisions = async (query: Record<string, string>) => {
-
-    const queryBuilder = new QueryBuilder(Division.find(), query)
-
-    const divisionsData = queryBuilder
-        .search(divisionSearchableFields)
-        .filter()
-        .sort()
-        .fields()
-        .paginate()
-
-    const [data, meta] = await Promise.all([
-        divisionsData.build(),
-        queryBuilder.getMeta()
-    ])
-
-    return {
-        data,
-        meta
-    }
-};
-const getSingleDivision = async (slug: string) => {
-    const division = await Division.findOne({ slug });
+const getAllDivisions = async () => {
+    const division = await Division.find({});
+    const totalDivision = await Division.countDocuments();
     return {
         data: division,
-    }
+        meta: {
+            total: totalDivision
+        }
+    };
 };
 
-
-
 const updateDivision = async (id: string, payload: Partial<IDivision>) => {
-
     const existingDivision = await Division.findById(id);
+
     if (!existingDivision) {
-        throw new Error("Division not found.");
+        throw new Error('Division Not Found');
     }
 
     const duplicateDivision = await Division.findOne({
         name: payload.name,
-        _id: { $ne: id },
+        _id: { $ne: id }
     });
 
     if (duplicateDivision) {
-        throw new Error("A division with this name already exists.");
+        throw new Error('A division with this name already exist');
     }
 
     // if (payload.name) {
-    //     const baseSlug = payload.name.toLowerCase().split(" ").join("-")
-    //     let slug = `${baseSlug}-division`
+    //     const baseSlug = payload.name.toLowerCase().split(' ').join('-');
+    //     let slug = `${baseSlug}-division`;
 
-    //     let counter = 0;
+    //     let count = 0;
     //     while (await Division.exists({ slug })) {
-    //         slug = `${slug}-${counter++}` // dhaka-division-2
+    //         slug = `${slug}-${count++}`;
     //     }
-
-    //     payload.slug = slug
+    //     payload.slug = slug;
     // }
 
-    const updatedDivision = await Division.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
+    const updateDivision = await Division.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
 
-    if (payload.thumbnail && existingDivision.thumbnail) {
-        await deleteImageFromCLoudinary(existingDivision.thumbnail)
-    }
-
-    return updatedDivision
+    return updateDivision;
 
 };
 
@@ -103,7 +71,6 @@ const deleteDivision = async (id: string) => {
 export const DivisionService = {
     createDivision,
     getAllDivisions,
-    getSingleDivision,
     updateDivision,
-    deleteDivision,
+    deleteDivision
 };

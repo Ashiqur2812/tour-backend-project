@@ -1,13 +1,17 @@
 import { model, Schema } from "mongoose";
 import { ITour, ITourType } from "./tour.interface";
+import { Division } from "../division/division.model";
 
 const tourTypeSchema = new Schema<ITourType>({
     name: { type: String, required: true, unique: true }
-}, {
-    timestamps: true
-})
+},
+    {
+        timestamps: true,
+        versionKey: false
+    }
+);
 
-export const TourType = model<ITourType>("TourType", tourTypeSchema)
+export const TourType = model<ITourType>('TourType', tourTypeSchema);
 
 const tourSchema = new Schema<ITour>({
     title: { type: String, required: true },
@@ -18,8 +22,6 @@ const tourSchema = new Schema<ITour>({
     costFrom: { type: Number },
     startDate: { type: Date },
     endDate: { type: Date },
-    departureLocation: { type: String },
-    arrivalLocation: { type: String },
     included: { type: [String], default: [] },
     excluded: { type: [String], default: [] },
     amenities: { type: [String], default: [] },
@@ -28,53 +30,59 @@ const tourSchema = new Schema<ITour>({
     minAge: { type: Number },
     division: {
         type: Schema.Types.ObjectId,
-        ref: "Division",
+        ref: 'Division',
         required: true
     },
     tourType: {
         type: Schema.Types.ObjectId,
-        ref: "TourType",
+        ref: 'TourType',
         required: true
     }
-}, {
-    timestamps: true
-})
+},
+    {
+        timestamps: true,
+        versionKey: false
+    }
+);
 
-tourSchema.pre("save", async function (next) {
+tourSchema.pre('save', async function (next) {
+    if (this.isModified('title')) {
 
-    if (this.isModified("title")) {
-        const baseSlug = this.title.toLowerCase().split(" ").join("-")
-        let slug = `${baseSlug}`
+        const baseSlug = this.title.toLowerCase().split(' ').join('-');
+        let slug = `${baseSlug}`;
 
         let counter = 0;
-        while (await Tour.exists({ slug })) {
-            slug = `${slug}-${counter++}` // dhaka-division-2
+        while (await Division.exists({ slug })) {
+            slug = `${slug}-${counter++}`;
         }
 
         this.slug = slug;
     }
-    next()
-})
 
-tourSchema.pre("findOneAndUpdate", async function (next) {
-    const tour = this.getUpdate() as Partial<ITour>
+    next();
+});
+
+tourSchema.pre('findOneAndUpdate', async function (next) {
+
+    const tour = this.getUpdate() as Partial<ITour>;
 
     if (tour.title) {
-        const baseSlug = tour.title.toLowerCase().split(" ").join("-")
-        let slug = `${baseSlug}`
+        const baseSlug = tour.title.toLowerCase().split(' ').join('-');
 
+        let slug = `${baseSlug}`;
 
         let counter = 0;
-        while (await Tour.exists({ slug })) {
-            slug = `${slug}-${counter++}` // dhaka-division-2
+        while (await Division.exists({ slug })) {
+            slug = `${slug}-${counter++}`;
         }
 
-        tour.slug = slug
+        tour.slug = slug;
     }
 
-    this.setUpdate(tour)
+    this.setUpdate(tour);
 
-    next()
-})
+    next();
+});
 
-export const Tour = model<ITour>("Tour", tourSchema)
+
+export const Tour = model<ITour>('Tour', tourSchema);
