@@ -18,6 +18,7 @@ const credentialsLogin = catchAsync(async (req: Request, res: Response, next: Ne
 
     passport.authenticate('local', async (err: any, user: any, info: any) => {
 
+        // console.log(user,info)
         if (err) {
             return next(new AppError(401, err));
         }
@@ -25,11 +26,9 @@ const credentialsLogin = catchAsync(async (req: Request, res: Response, next: Ne
         if (!user) {
             return next(new AppError(401, info.message));
         }
-
+        
         const userTokens = await createUserTokens(user);
-
         const { password: pass, ...rest } = user.toObject();
-
         setAuthCookie(res, userTokens);
 
         sendResponse(res, {
@@ -55,7 +54,6 @@ const getNewAccessToken = catchAsync(async (req: Request, res: Response, next: N
     }
 
     const tokenInfo = await AuthServices.getNewAccessToken(refreshToken as string);
-
     setAuthCookie(res, tokenInfo);
 
     sendResponse(res, {
