@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
+import { excludeField } from "../../constants";
 import { tourSearchableFields } from "./tour.constant";
 import { ITour, ITourType } from "./tour.interface";
 import { Tour, TourType } from "./tour.model";
@@ -28,12 +30,17 @@ const getAllTours = async (query: Record<string, string>) => {
 
     const filter = query;
     const searchTerm = query.searchTerm || '';
+    const sort = query.sort || 'createdAt';
+    const fields = query.fields.split(',').join(' ') || ''
+    // console.log(fields)
 
-    delete filter['searchTerm'];
+    for(const field of excludeField){
+        delete filter[field]
+    }
 
     const searchQuery = { $or: tourSearchableFields.map(field => ({ [field]: { $regex: searchTerm, $options: 'i' } })) };
-    
-    const tours = await Tour.find(searchQuery).find(filter);
+
+    const tours = await Tour.find(searchQuery).find(filter).sort(sort).select(fields)
 
     const totalTours = await Tour.countDocuments();
     return {
