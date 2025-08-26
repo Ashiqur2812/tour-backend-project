@@ -31,16 +31,19 @@ const getAllTours = async (query: Record<string, string>) => {
     const filter = query;
     const searchTerm = query.searchTerm || '';
     const sort = query.sort || 'createdAt';
-    const fields = query.fields.split(',').join(' ') || ''
+    const fields = query.fields?.split(',').join(' ') || '';
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * (limit);
     // console.log(fields)
 
-    for(const field of excludeField){
-        delete filter[field]
+    for (const field of excludeField) {
+        delete filter[field];
     }
 
     const searchQuery = { $or: tourSearchableFields.map(field => ({ [field]: { $regex: searchTerm, $options: 'i' } })) };
 
-    const tours = await Tour.find(searchQuery).find(filter).sort(sort).select(fields)
+    const tours = await Tour.find(searchQuery).find(filter).sort(sort).select(fields).skip(skip).limit(limit);
 
     const totalTours = await Tour.countDocuments();
     return {
@@ -62,19 +65,6 @@ const updateTour = async (id: string, payload: Partial<ITour>) => {
     if (!existingTour) {
         throw new Error('Tour not Found');
     }
-
-    // console.log(existingTour)
-    // if (payload.title) {
-    //     const baseSlug = payload.title.toLowerCase().split(' ').join('-');
-    //     let slug = `${baseSlug}`;
-
-    //     let count = 0;
-    //     while (await Division.exists({ slug })) {
-    //         slug = `${slug}-${count++}`;
-    //     }
-
-    //     payload.slug = slug;
-    // }
 
     const updatedTour = await Tour.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
     return updatedTour;
